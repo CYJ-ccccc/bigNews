@@ -16,6 +16,7 @@
   <!-- 引入bootstrap的js文件 -->
   <script src="./libs/bootstrap/js/bootstrap.min.js"></script>
 </head>
+<script src="./js/apiHttp.js"></script>
 
 <body>
   <div class="main_wrap">
@@ -38,6 +39,75 @@
     </div>
   </div>
 
+
+  <!-- Modal 弹出框bootstrap模态框-->
+  <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+              aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="myModalLabel">温馨提示</h4>
+        </div>
+        <div class="modal-body">
+          ...
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">确定</button>
+          <!-- <button type="button" class="btn btn-primary">保存</button> -->
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
+<script>
+  $('.input_sub').on('click', function (event) {
+    // 阻止表单元素的默认提交行为
+    event.preventDefault();
+    // 获取用户输入的用户名及密码
+    let userName = $('.input_txt').val().trim();
+    let userPassworde = $('.input_pass').val().trim();
+    // 做非空判断
+    if (userName == '' || userPassworde == '') {
+      // alert('用户名及密码不能为空哦！');
+      // 使用模态框
+      $('.modal-body').text('用户名及密码不能为空哦！')
+      $('#myModal').modal();
+      return
+    }
+    // 发送ajax请求
+    $.ajax({
+      type: 'post',
+      url: BigNew.user_login,
+      data: {
+        username: userName,
+        password: userPassworde
+      },
+      success: function (dataBack) {
+        console.log(dataBack);
+        if (dataBack.code == 200) {
+          // alert(dataBack.msg);
+          // 获取返回数据的token值，并保存在本地
+          localStorage.setItem('token', dataBack.token)
+          // 使用模态框
+          $('.modal-body').text(dataBack.msg)
+          $('#myModal').modal();
+          $('#myModal').on('hidden.bs.modal', function () {
+            window.location.href = "./index.html"
+          })
+
+        } else {
+          // alert(dataBack.msg);
+          // 使用模态框
+          $('.modal-body').text(dataBack.msg)
+          $('#myModal').modal();
+          $('.input_txt').val('');
+          $('.input_pass').val('');
+        }
+
+      }
+    })
+  })
+</script>
 
 </html>
