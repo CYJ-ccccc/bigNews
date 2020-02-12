@@ -54,5 +54,60 @@
 
         </div>
     </div>
+
+
+    <!-- 退出 弹出框bootstrap模态框-->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel">温馨提示</h4>
+                </div>
+                <div class="modal-body">
+                    ...
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
+<script src="./js/apiHttp.js"></script>
+<script>
+    // 进入主页就执行这个函数
+    $(function () {
+        $.ajax({
+            type: 'get',
+            url: BigNew.user_info,
+            success: function (backData) {
+                console.log(backData);
+                $('.header_bar img').attr('src', backData.data.userPic);
+                $('.user_info img').attr('src', backData.data.userPic);
+                $('.user_info span').text('欢迎' + '  ' + '  ' + backData.data.nickname)
+            }
+        })
+    })
+    // 点击退出
+    $('.logout').on('click', function (event) {
+        // 阻止a标签默认跳转
+        event.preventDefault();
+        // 询问用户是否退出
+        $('.modal-body').text('你确定要退出吗？')
+        $('#myModal').modal();
+        // 当点击确定时
+        $('.btn-primary').on('click', function () {
+            // 先移出保存在本地的token
+            localStorage.removeItem('token');
+            // 在跳转登录页面
+            window.location.href='./login.html';
+        })
+
+
+    })
+</script>
+
 </html>

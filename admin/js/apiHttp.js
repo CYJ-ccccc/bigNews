@@ -26,7 +26,19 @@
     window.BigNew = BigNew;
 }(window))
 
-// 全局ajax设置
+// ajax全局设置
 $.ajaxSetup({
-    
+    // 发送请求前回先执行这个函数
+    beforeSend(xhr) {
+        // 先设置请求头
+        xhr.setRequestHeader('Authorization', localStorage.getItem('token'))
+    },
+    // 请求失败执行这个函数
+    error(xhr, status, error) {
+        if (error === 'Forbidden') {
+            alert('请登录');
+            window.location.href = './login.html'
+        }
+    }
+
 })
