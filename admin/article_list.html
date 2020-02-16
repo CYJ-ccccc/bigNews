@@ -13,6 +13,11 @@
     <script src="./libs/jquery-1.12.4.min.js"></script>
     <!-- 引入模板引擎js文件 -->
     <script src="./libs/template-web.js"></script>
+    <!-- 引入页签插件js文件 -->
+    <script src="./libs/jquery.twbsPagination.js"></script>
+    <script src="./libs/bootstrap/js/bootstrap.min.js"></script>
+    <!-- 引入接口网址js文件 -->
+    <script src="./js/apiHttp.js"></script>
 </head>
 
 <body>
@@ -68,10 +73,167 @@
                     </tr>
                 </tbody>
             </table>
+            <!-- 分页插件结构 -->
             <div class="row text-center">
+                <ul id="pagination-demo" class="pagination-sm"></ul>
+                <p>没有数据!</p>
             </div>
         </div>
     </div>
 </body>
+<!-- --------------------------------------------------------------------------------------------------------------------------- -->
+<!-- 准备一个文章类别模板引擎 -->
+<script id="category_temp" type="text/html">
+    <option value="">所有分类</option>
+    {{each data value}}
+    <option value="{{value.id}}">{{value.name}}</option>
+    {{/each}}
+</script>
+<!-- 准备一个文章内容模板引擎 -->
+<script id="articleList_temp" type="text/html">
+    {{each data.data value}}
+    <tr>
+        <td>{{value.title}}</td>
+        <td>{{value.author}}</td>
+        <td>{{value.category}}</td>
+        <td class="text-center">{{value.date}}</td>
+        <td class="text-center">{{value.state}}</td>
+        <td class="text-center">
+            <a href="article_edit.html?id={{value.id}}" class="btn btn-default btn-xs">编辑</a>
+            <a href="javascript:void(0);" data-id="{{value.id}}" class="btn btn-danger btn-xs delete">删除</a>
+        </td>
+    </tr>
+    {{/each}}
+</script>
+<!-- --------------------------------------------------------------------------------------------------------------------------- -->
+<!-- --------------------------------------------------------------------------------------------------------------------------- -->
+<script>
+    //入口函数  
+    $(function () {
+        //一: 发送ajax请求,获取所有的文章类别,然后通过模板引擎渲染到下拉菜单中.
+        $.ajax({
+            url: BigNew.category_list,
+            success: function (dataBack) {
+                // console.log(dataBack);
+                if (dataBack.code == 200) {
+                    // 获取模板引擎生成的页面
+                    let resHtml = template('category_temp', dataBack);
+                    // 追加到列表页
+                    $('#selCategory').html(resHtml);
+                }
+            }
+        })
+        //二:
+        //   1.一进到页面,就发送ajax请求,获取默认的文章数据列表,显示在页面上 
+        //   2.对获取回来的文章数据进行分页处理
+        //     声明全局变量，存放当前显示页码
+        let showPage = 1;
+        //     // 将获取文章数据列表封装成函数
+        function getArticleContent(showPage, backFunction) {
+            // 发送ajax请求,获取当前的文章数据列表
+            $.ajax({
+                url: BigNew.article_query,
+                data: {
+                    type: $('#selCategory').val(), //文章类别
+                    state: $('#selStatus').val(), //文章状态
+                    page: showPage,
+                    perpage: 6
+                },
+                success: function (backData) {
+                    // console.log(backData);
+                    // 获取模板引擎生成的页面
+                    let resHtml = template('articleList_temp', backData);
+                    // 追加到列表页
+                    $('tbody').html(resHtml);
+                    // 判断外部调用是否传进来回调函数
+                    // console.log(showPage);
+                    // console.log(backData.data.data.length);
+                    // console.log(backData.data.totalPage);
+                    if (backData.data.data.length != 0 && backFunction !=
+                        null) { //存在回调函数，并且返回来的数据的数组长度不为0（当前页不是最后一页）
+                        //有数据
+                        $('#pagination-demo').show();
+                        $('#pagination-demo').next().hide();
+                        // 把请求回来的数据传进去，并且执行该回调函数
+                        backFunction(backData);
+                    } else if (backData.data.data.length == 0 && showPage == 1) { //当前页无数据
+                        $('#pagination-demo').hide();
+                        $('#pagination-demo').next().show();
+                    } else if (backData.data.data.length == 0 && backData.data.totalPage ==
+                        showPage - 1) { //返回来的数据的数组长度为0（当前页是最后一页,并且当前页只有一篇文章）
+                        // 显示页码减一
+                        showPage -= 1;
+                        // 重新分页并且显示
+                        $('#pagination-demo').twbsPagination('changeTotalPages', backData.data
+                            .totalPage, showPage);
+                    }
+                }
+            });
+        }
+        //     // 1.调用获取文章数据列表函数
+        getArticleContent(1, function (backData) {
+            // 2.对获取回来的文章数据进行分页处理
+            $('#pagination-demo').twbsPagination({
+                totalPages: backData.data.totalPage, //返回来的数据总页数
+                visiblePages: 7, //当前显示的页码数量
+                first: '首页',
+                prev: '上一页',
+                next: '下一页',
+                last: '尾页',
+                // 给每页添加点击事件
+                onPageClick: function (event, onClickPage) {
+                    // 获取被点击的页码
+                    showPage = onClickPage;
+                    // 调用获取文章数据列表函数,并且显示当前被点击页码的全部文章数据
+                    getArticleContent(showPage, null);
+                }
+            })
+        });
+
+        //     //三：点击筛选按钮;
+        $('#btnSearch').on('click', function (event) {
+            // 阻止表单元素的默认提交行为
+            event.preventDefault();
+            // 调用获取文章数据列表函数
+            getArticleContent(1, function (backData) {
+                // 重新分页
+                $('#pagination-demo').twbsPagination(
+                    'changeTotalPages', backData.data.totalPage,
+                    1)
+
+            });
+        })
+        //     //四：删除文章；
+        $('tbody').on('click', '.delete', function () {
+            if (confirm('你确定要删除这篇文章吗？')) {
+                // 获取被删除的标签id
+                let deleteId = parseInt($(this).attr('data-id'));
+                // console.log(deleteId);
+                // 发送删除文章ajax请求
+                $.ajax({
+                    type: 'post',
+                    url: BigNew.article_delete,
+                    data: {
+                        id: deleteId
+                    },
+                    success: function (backData) {
+                        console.log(backData);
+                        if (backData.code == 204) {
+                            alert('删除成功！');
+                            // 重新调用获取文章数据列表函数
+                            getArticleContent(showPage, function (backData) {
+                                // 重新分页
+                                $('#pagination-demo').twbsPagination(
+                                    'changeTotalPages', backData.data.totalPage,
+                                    showPage)
+                            })
+                        }
+                    }
+                })
+            }
+        })
+    })
+    // --------------------------------------------------------------------------------------------------------------------------------
+</script>
 
 </html>

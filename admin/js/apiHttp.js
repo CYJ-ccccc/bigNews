@@ -36,7 +36,7 @@ $.ajaxSetup({
     // 请求失败执行这个函数
     error(xhr, status, error) {
         if (error === 'Forbidden') {
-            alert('请登录');
+            alert('请先登录');
             window.location.href = './login.html'
         }
     }

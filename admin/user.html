@@ -69,5 +69,68 @@
         </div>
     </div>
 </body>
+<script src="./js/apiHttp.js"></script>
+<script>
+    $(function () {
+        $.ajax({
+            url: BigNew.user_detail,
+            success: function (dataBack) {
+                // console.log(dataBack);
+                if (dataBack.code == 200) {
+                    // $('.username').val(dataBack.data.username);
+                    // $('.nickname').val(dataBack.data.nickname);
+                    // $('.email').val(dataBack.data.email);
+                    // $('.password').val(dataBack.data.password);
+                    for (let key in dataBack.data) {
+                        $('.' + key).val(dataBack.data[key]);
+                    }
+                    $('.user_pic').attr('src', dataBack.data.userPic)
+                }
+            }
+        })
+        // 图片预览
+        $('#exampleInputFile').on('change', function () {
+            let file1 = this.files[0];
+            let url = URL.createObjectURL(file1);
+            // $('img.user_pic').attr('src',url);
+            $(this).prev('img').attr('src', url);
+        })
+        // 提交
+        $('.btn-edit').on('click', function (event) {
+            event.preventDefault();
+            let form1 = $('form')[0];
+            let formObj = new FormData(form1);
+            $.ajax({
+                type: 'post',
+                url: BigNew.user_edit,
+                data: formObj,
+                contentType: false,
+                processData: false,
+                success: function (dataBack) {
+                    // console.log(dataBack);
+                    if (dataBack.code == 200) {
+                        alert('修改成功');
+                        // parent.window.location.reload();
+                        $.ajax({
+                            type: 'get',
+                            url: BigNew.user_info,
+                            success: function (backData) {
+                                console.log(backData);
+                                parent.$('.user_info sapn').text('欢迎' + '   ' +
+                                    '   ' + backData.data.nickname);
+                                parent.$('.user_center_link img').attr('src',
+                                    backData.data.userPic);
+                                parent.$('.user_info img').attr('src', backData
+                                    .data.userPic);
+
+                            }
+                        })
+                    }
+
+                }
+            })
+        })
+    });
+</script>
 
 </html>
